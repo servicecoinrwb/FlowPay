@@ -7,7 +7,7 @@ const cors = require("cors");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const TREASURY_ADDRESS = "0x4D4F4135757fAef9eFbB3a959A58CD01c0beCa4D";
+const TREASURY_ADDRESS = "0xe59cd249b053819f41bedcfaa6541A42E67ee022";
 
 app.use("/webhook", express.raw({ type: "application/json" }));
 app.use(cors());
@@ -21,8 +21,8 @@ app.post("/create-onramp", async (req, res) => {
   try {
     const { amount, treasuryAddress = TREASURY_ADDRESS } = req.body;
     const params = new URLSearchParams({
-      "transaction_details[destination_currency]": "usdc",
-      "transaction_details[destination_network]": "ethereum",
+      "transaction_details[destination_currency]": "eth",
+      "transaction_details[destination_network]": "base",
       "transaction_details[source_exchange_amount]": amount.toString(),
       "transaction_details[source_currency]": "usd",
       "transaction_details[lock_wallet_address]": "true",
