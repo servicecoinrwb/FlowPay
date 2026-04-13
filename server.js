@@ -25,7 +25,7 @@ app.post("/create-onramp", async (req, res) => {
     const params = new URLSearchParams({
       "transaction_details[destination_currency]": "usdc",
       "transaction_details[destination_network]": "arbitrum",
-      "transaction_details[destination_amount]": amount.toString(),
+      "transaction_details[source_amount]": amount.toString(),
       "transaction_details[lock_wallet_address]": "true",
       "transaction_details[wallet_address]": treasuryAddress,
     });
