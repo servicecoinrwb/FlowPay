@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const Stripe = require("stripe");
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-const { ethers } = require("ethers");
+const https = require("https");
 const cors = require("cors");
 
 const app = express();
@@ -22,21 +22,30 @@ app.post("/create-onramp", async (req, res) => {
   try {
     const { amount, treasuryAddress = TREASURY_ADDRESS } = req.body;
 
-    const session = await stripe.request({
-      method: "POST",
-      path: "/v1/crypto/onramp_sessions",
-      params: {
-        transaction_details: {
-          destination_currency: "usdc",
-          destination_network: "arbitrum",
-          destination_amount: amount.toString(),
-          lock_wallet_address: true,
-          wallet_address: treasuryAddress,
-        },
-      },
+    const params = new URLSearchParams({
+      "transaction_details[destination_currency]": "usdc",
+      "transaction_details[destination_network]": "arbitrum",
+      "transaction_details[destination_amount]": amount.toString(),
+      "transaction_details[lock_wallet_address]": "true",
+      "transaction_details[wallet_address]": treasuryAddress,
     });
 
-    console.log("Onramp session created:", session.id);
+    const response = await fetch("https://api.stripe.com/v1/crypto/onramp_sessions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    });
+
+    const session = await response.json();
+    console.log("Onramp session:", JSON.stringify(session, null, 2));
+
+    if (session.error) {
+      return res.status(400).json({ error: session.error.message });
+    }
+
     res.json({
       redirect_url: session.redirect_url,
       session_id: session.id,
