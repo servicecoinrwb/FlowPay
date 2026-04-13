@@ -2,12 +2,10 @@ require("dotenv").config();
 const express = require("express");
 const Stripe = require("stripe");
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-const https = require("https");
 const cors = require("cors");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-
 const TREASURY_ADDRESS = "0x4D4F4135757fAef9eFbB3a959A58CD01c0beCa4D";
 
 app.use("/webhook", express.raw({ type: "application/json" }));
@@ -21,15 +19,14 @@ app.get("/", (req, res) => {
 app.post("/create-onramp", async (req, res) => {
   try {
     const { amount, treasuryAddress = TREASURY_ADDRESS } = req.body;
-
     const params = new URLSearchParams({
       "transaction_details[destination_currency]": "usdc",
       "transaction_details[destination_network]": "arbitrum",
       "transaction_details[source_exchange_amount]": amount.toString(),
+      "transaction_details[source_currency]": "usd",
       "transaction_details[lock_wallet_address]": "true",
       "transaction_details[wallet_address]": treasuryAddress,
     });
-
     const response = await fetch("https://api.stripe.com/v1/crypto/onramp_sessions", {
       method: "POST",
       headers: {
@@ -38,21 +35,12 @@ app.post("/create-onramp", async (req, res) => {
       },
       body: params.toString(),
     });
-
     const session = await response.json();
-    console.log("Onramp session:", JSON.stringify(session, null, 2));
-
-    if (session.error) {
-      return res.status(400).json({ error: session.error.message });
-    }
-
-    res.json({
-      redirect_url: session.redirect_url,
-      session_id: session.id,
-      client_secret: session.client_secret,
-    });
+    console.log("Stripe response:", JSON.stringify(session, null, 2));
+    if (session.error) return res.status(400).json({ error: session.error.message });
+    res.json({ redirect_url: session.redirect_url, session_id: session.id, client_secret: session.client_secret });
   } catch (err) {
-    console.error("Onramp session error:", err.message);
+    console.error("Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -63,13 +51,10 @@ app.post("/webhook", async (req, res) => {
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    console.error("Webhook signature failed:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
-  console.log("Event received:", event.type);
+  console.log("Event:", event.type);
   res.json({ received: true });
 });
 
-app.listen(PORT, () => {
-  console.log("FlowPay Server running on port", PORT);
-});
+app.listen(PORT, () => console.log("FlowPay running on port", PORT));
