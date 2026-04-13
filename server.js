@@ -22,7 +22,7 @@ app.post("/create-onramp", async (req, res) => {
     const { amount, treasuryAddress = TREASURY_ADDRESS } = req.body;
     const params = new URLSearchParams({
       "transaction_details[destination_currency]": "usdc",
-      "transaction_details[destination_network]": "arbitrum",
+      "transaction_details[destination_network]": "ethereum",
       "transaction_details[source_exchange_amount]": amount.toString(),
       "transaction_details[source_currency]": "usd",
       "transaction_details[lock_wallet_address]": "true",
